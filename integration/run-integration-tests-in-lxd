@@ -30,17 +30,13 @@ function _run_tests {
 	lxc launch $CONTAINER_IMAGE $CONTAINER_NAME -c security.nesting=true
 	lxc exec $CONTAINER_NAME -- cloud-init status --long --wait
 
-	lxc exec $CONTAINER_NAME -- mkdir -p /opt/pylxd
-	# NOTE: rockstar (13 Sep 2016) - --recursive is not supported in lxd <2.1, so
-	# until we have pervasive support for that, we'll do this tar hack.
 	local ldir="${_dir}/.."
-	cd ${ldir} && tar cf - * .git | lxc exec $CONTAINER_NAME -- tar xf - -C /opt/pylxd
-	cd ${_dir}
+	lxc file push --create-dirs --recursive ${ldir} ${CONTAINER_NAME}/opt/
 	lxc exec $CONTAINER_NAME -- /bin/sh -c "cd /opt/pylxd && integration/run-integration-tests"
 
 	lxc delete --force $CONTAINER_NAME
 }
 
 # run focal and then bionic integration tests
-_run_tests bionic
 _run_tests focal
+_run_tests bionic
